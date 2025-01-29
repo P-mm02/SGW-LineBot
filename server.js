@@ -7,8 +7,8 @@ app.use(bodyParser.json())
 
 const LINE_ACCESS_TOKEN = process.env.LINE_ACCESS_TOKEN
 
-// Store processed message IDs (temporary, resets when the server restarts)
-const processedMessages = new Set()
+// Store processed users (temporary, resets when the server restarts)
+const processedUsers = new Set()
 
 app.post('/webhook', async (req, res) => {
   console.log('🔹 Received Webhook Event:', JSON.stringify(req.body, null, 2)) // Debugging log
@@ -26,19 +26,16 @@ app.post('/webhook', async (req, res) => {
 
   for (let event of events) {
     if (event.type === 'message' && event.message.type === 'text') {
-      const messageId = event.message.id
       const userId = event.source.userId
 
-      // ✅ Check if this message has already been processed
-      if (processedMessages.has(messageId)) {
-        console.log(
-          `⚠️ Message ID ${messageId} from User ${userId} already processed. Ignoring.`
-        )
+      // ✅ Check if this user has already been processed
+      if (processedUsers.has(userId)) {
+        console.log(`⚠️ User ${userId} already processed. Ignoring.`)
         return res.sendStatus(200)
       }
 
-      // ✅ Mark this message as processed
-      processedMessages.add(messageId)
+      // ✅ Mark this user as processed
+      processedUsers.add(userId)
 
       console.log('📩 Message received from LINE:', event.message.text) // Log message
 
@@ -72,7 +69,7 @@ app.post('/webhook', async (req, res) => {
         }
       )
 
-      console.log(`✅ Processed message ID: ${messageId} from User ${userId}`)
+      console.log(`✅ Processed user: ${userId}`)
     }
   }
 
