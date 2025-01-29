@@ -7,7 +7,7 @@ app.use(bodyParser.json())
 
 const LINE_ACCESS_TOKEN = process.env.LINE_ACCESS_TOKEN
 
-// Store processed message IDs in memory
+// Store processed message IDs (temporary, resets when the server restarts)
 const processedMessages = new Set()
 
 app.post('/webhook', async (req, res) => {
@@ -27,10 +27,13 @@ app.post('/webhook', async (req, res) => {
   for (let event of events) {
     if (event.type === 'message' && event.message.type === 'text') {
       const messageId = event.message.id
+      const userId = event.source.userId
 
       // ✅ Check if this message has already been processed
       if (processedMessages.has(messageId)) {
-        console.log(`⚠️ Message ID ${messageId} already processed. Ignoring.`)
+        console.log(
+          `⚠️ Message ID ${messageId} from User ${userId} already processed. Ignoring.`
+        )
         return res.sendStatus(200)
       }
 
@@ -69,7 +72,7 @@ app.post('/webhook', async (req, res) => {
         }
       )
 
-      console.log(`✅ Processed message ID: ${messageId}`)
+      console.log(`✅ Processed message ID: ${messageId} from User ${userId}`)
     }
   }
 
