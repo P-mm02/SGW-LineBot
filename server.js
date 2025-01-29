@@ -7,8 +7,14 @@ app.use(bodyParser.json())
 
 const LINE_ACCESS_TOKEN = process.env.LINE_ACCESS_TOKEN
 
-// Store processed users (temporary, resets when the server restarts)
-const processedUsers = new Set()
+// Store user messages: { userId: [ "message1", "message2", ... ] }
+const userMessages = new Map()
+
+// ✅ Reset userMessages Map every year (365 days in milliseconds)
+setInterval(() => {
+  console.log('♻️ Resetting user message history for the new year...')
+  userMessages.clear()
+}, 365 * 24 * 60 * 60 * 1000) // 1 year in milliseconds
 
 app.post('/webhook', async (req, res) => {
   console.log('🔹 Received Webhook Event:', JSON.stringify(req.body, null, 2)) // Debugging log
@@ -27,19 +33,28 @@ app.post('/webhook', async (req, res) => {
   for (let event of events) {
     if (event.type === 'message' && event.message.type === 'text') {
       const userId = event.source.userId
+      const userMessage = event.message.text.toLowerCase().trim()
 
-      // ✅ Check if this user has already been processed
-      if (processedUsers.has(userId)) {
-        console.log(`⚠️ User ${userId} already processed. Ignoring.`)
+      // ✅ Initialize storage for this user if not exists
+      if (!userMessages.has(userId)) {
+        userMessages.set(userId, [])
+      }
+
+      // ✅ Check if this user already sent the same message
+      if (userMessages.get(userId).includes(userMessage)) {
+        console.log(
+          `⚠️ User ${userId} already sent message: "${userMessage}". Ignoring.`
+        )
         return res.sendStatus(200)
       }
 
-      // ✅ Mark this user as processed
-      processedUsers.add(userId)
+      // ✅ Store the new message for this user
+      userMessages.get(userId).push(userMessage)
 
-      console.log('📩 Message received from LINE:', event.message.text) // Log message
+      console.log(
+        `📩 New message received from User ${userId}: "${userMessage}"`
+      )
 
-      const userMessage = event.message.text.toLowerCase()
       let replyText = 'กรุณารอการตอบกลับจากเจ้าหน้าที่'
 
       if (userMessage.includes('hello') || userMessage.includes('hi')) {
@@ -69,7 +84,7 @@ app.post('/webhook', async (req, res) => {
         }
       )
 
-      console.log(`✅ Processed user: ${userId}`)
+      console.log(`✅ Processed message from User ${userId}: "${userMessage}"`)
     }
   }
 
