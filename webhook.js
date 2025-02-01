@@ -36,16 +36,6 @@ router.post('/webhook', async (req, res) => {
         userMessages.set(userId, [])
       }
 
-      // ✅ Check if this user already sent the same message
-      if (userMessages.get(userId).includes(userMessage)) {
-        /* console.log(
-          `⚠️ User ${userId} already sent message: "${userMessage}". Ignoring.`
-        ) */
-        return res.sendStatus(200)
-      }
-
-      // ✅ Store the new message for this user
-      userMessages.get(userId).push(userMessage)
 
       console.log(
         `📩 New message received from User ${userId}: "${userMessage}"`
@@ -56,7 +46,31 @@ router.post('/webhook', async (req, res) => {
       // ✅ Check if the message matches any key in msgData.json
       for (const key in msgData) {
         if (userMessage.includes(key)) {
+          // ✅ Check if this user already sent the same message
+          if (userMessages.get(userId).includes(key)) {
+            /* console.log(
+              `⚠️ User ${userId} already sent message: "${userMessage}". Ignoring.`
+            ) */
+            return res.sendStatus(200)
+          }
           replyText = msgData[key]
+
+          // ✅ Store the new message for this user
+          if (key==="เจาะ" || key==="บาดาล") {
+            userMessages.get(userId).push("เจาะ")
+            userMessages.get(userId).push("บาดาล")
+          }else if (key==="เครื่องสูบ" || key==="ปั้ม") {
+            userMessages.get(userId).push("เครื่องสูบ")
+            userMessages.get(userId).push("ปั้ม")
+          }else if (key==="สวัสดี" || key==="สอบถาม" || key==="ขอ" || key==="ปรึกษา") {
+            userMessages.get(userId).push("สวัสดี")
+            userMessages.get(userId).push("สอบถาม")
+            userMessages.get(userId).push("ขอ")
+            userMessages.get(userId).push("ปรึกษา")
+          }else{
+            userMessages.get(userId).push(key)
+          }
+
           break
         }
       }
